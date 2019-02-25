@@ -1,0 +1,41 @@
+Spring WebFlux
+1. Works on Netty and Tomcat (Servlet 3.1+) - default spring boot starter is using Netty
+2. Using event loop (number of threads equals number of CPU cores), we must not block it!
+3. If we are using blocking library we must do it in separate rhread pool (Scheduler abstraction + publishOn)
+4. There are different types of schedulers: parallel (fixed number of threads), elastic (dynamic number of threads)
+
+Research results:
+1. Tomcat + spring web (blocking IO) 
+behavior: tomcat creates huge number of threads (same as total requests in flight)
+bottleneck: max number of tomcat threads, slow requests negatively impact fast requests (unpredictable resposne time)
+conditions:
+max threads = 10
+fast requests - 15 threads on JMeter
+slow requests - 15 threads on JMeter
+
+2. Tomcat + spring WebFlux
+behavior: async servlets are used (Servlet 3.1+), sometimes NullPointerException obxerved in logs (why?), tomcat cretes small number of HTTP threads (like Netty), fast requests are protected from slow requests, predictable response time
+bottleneck: thread pool per specific request type
+
+max threads = 10 (doesn't matter)
+fast requests - 15 threads in pool, 15 thread on JMeter
+slow requests - 5 threads in pool, 15 threads on JMeter
+
+3. Netty + spring web (blocking IO) - same as tomcat blocking
+4. Netty + WebFlux - same as tomcat non-blocking
+
+как tomcat non-blocking, но почему-то 20% errros (может я сам накосячил)
+
+What else
+measure blocking tomcat if we define a lot of threads (>30), compare with non-blocking (netty/tomcat)
+
+Monitoring: POC - measuring response time per request type, different timers
+
+Caching:
+1. HTTP caching
+2. Cache JSON/PNG generated data
+3. Cache Repository
+
+- how to detect that application started - implements ApplicationListener<ApplicationReadyEvent>
+and listen for ApplicationReadyEvent
+
